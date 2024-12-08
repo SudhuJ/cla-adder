@@ -1,0 +1,71 @@
+.include TSMC_180nm.txt
+.include subckt.txt
+
+.param SUPPLY=1.8
+.param LAMBDA = 0.09u
+.param len = 2*LAMBDA
+.param W_P = 20*LAMBDA
+.param W_N = 10*LAMBDA
+
+.global gnd vdd 
+vdd vdd gnd 'SUPPLY'
+
+* Input Pulses
+VA A gnd pulse (0 SUPPLY 10ns 0.01ns 0.01ns 10ns 20ns)
+VB B gnd pulse (0 SUPPLY 20ns 0.01ns 0.01ns 20ns 40ns)
+* VC C gnd pulse (0 SUPPLY 40ns .1ns .1ns 40ns 80ns)
+* VC D gnd pulse (0 SUPPLY 80ns .1ns .1ns 80ns 160ns)
+
+
+.subckt exor2 out a b vdd gnd
+
+Xinv a_inv a vdd gnd inv
+
+M_PMOSB1 out b a vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_NMOSB1 a_inv b out gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+
+M_PMOSB2 out a b vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_NMOSB2 b a_inv out gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+.ends exor2
+
+
+Xxor out a b vdd gnd exor2
+
+
+
+
+* .subckt xor2 out a b vdd gnd
+
+* Xinv b_inv b vdd gnd inv
+* Xmux y a b b_inv vdd gnd mux
+* Xbuff out y vdd gnd buffer
+
+* .ends xor2
+
+
+* Simulation Setup
+.tran 0.01ns 40ns
+.control
+
+    set hcopypscolor = 1
+    set color0 = black
+    set color1 = white
+    run
+    set curplottitle= xor
+    plot v(A) v(B)+2 v(out)+4
+
+.endc
+.end
+

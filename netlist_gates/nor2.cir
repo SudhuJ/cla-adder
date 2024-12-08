@@ -1,0 +1,203 @@
+.include TSMC_180nm.txt
+.include subckt.txt
+
+.param SUPPLY=1.8
+.param LAMBDA = 0.09u
+.param len = 2*LAMBDA
+.param W_P = 20*LAMBDA
+.param W_N = 10*LAMBDA
+
+.global gnd vdd 
+vdd vdd gnd 'SUPPLY'
+
+* Input Pulses
+VA A gnd pulse (0 SUPPLY 10ns .1ns .1ns 10ns 20ns)
+VB B gnd pulse (0 SUPPLY 20ns .1ns .1ns 20ns 40ns)
+* VC C gnd pulse (0 SUPPLY 40ns .1ns .1ns 40ns 80ns)
+* VD D gnd pulse (0 SUPPLY 80ns .1ns .1ns 80ns 160ns)
+
+.subckt nor2 out a b vdd gnd
+
+M_PMOSA y a vdd vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_PMOSB out b y vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_NMOSA gnd a out gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+M_NMOSB gnd b out gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+.ends nor2
+
+
+.subckt or2 out a b vdd gnd
+
+Xnor2 y a b vdd gnd nor2
+Xinv out y vdd gnd inv
+
+.ends or2
+
+
+Xor2 out a b vdd gnd or2
+
+
+* Simulation Setup
+.tran 0.01ns 40ns
+.control
+    set hcopypscolor = 1
+    set color0 = black
+    set color1 = white
+    run
+    set curplottitle= nor2
+    plot v(A) v(B) v(out)+2
+
+.endc
+.end
+
+
+
+* * PTL 
+
+* .include TSMC_180nm.txt
+
+* .param SUPPLY=1.8
+* .param LAMBDA = 0.09u
+* .param len = 2*LAMBDA
+* .param W_P = 20*LAMBDA
+* .param W_N = 10*LAMBDA
+
+* .global gnd vdd 
+* vdd vdd gnd 'SUPPLY'
+
+* * Input Pulses
+* VA A gnd pulse (0 SUPPLY 10ns .01ns .01ns 10ns 20ns)
+* VB B gnd pulse (0 SUPPLY 20ns .01ns .01ns 20ns 40ns)
+* * VC C gnd pulse (0 SUPPLY 40ns .1ns .1ns 40ns 80ns)
+* * VC D gnd pulse (0 SUPPLY 80ns .1ns .1ns 80ns 160ns)
+
+
+* * CMOS Inverter Subcircuit
+* * .subckt <name> <output> <input> <vdd> <gnd>
+* .subckt inv out in vdd gnd
+* M1 out in gnd gnd CMOSN W={W_N} L={len}
+* + AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N}
+* + AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+* M2 out in vdd vdd CMOSP W={W_P} L={len}
+* + AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P}
+* + AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+* .ends inv
+
+* * repeater (redstone)
+* .subckt buffer out in vdd gnd
+* Xinv mid in vdd gnd inv
+* Xinv2 out mid vdd gnd inv
+* .ends buffer
+
+* * .subckt <name> <output> <select> < <i_a> <i_b> <vdd> <gnd>
+* * y = s'.a + s.b
+* .subckt mux out select a b vdd gnd
+* M_PMOSB Y select a vdd CMOSP W={W_P} L={len} 
+* + AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
+* + AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+* M_NMOSA Y select b gnd CMOSN W={W_N} L={len} 
+* + AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
+* + AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+* Xmuxbuffer out Y vdd gnd buffer ; repeater buffer attached
+* .ends mux
+* .subckt nand2 out a b vdd gnd
+* Xmux y a gnd b vdd gnd mux
+* Xinv out y vdd gnd inv
+* .ends nand2
+
+* Xnand2 out a b vdd gnd nand2
+
+
+* * Simulation Setup
+* .tran 0.01ns 40ns
+* .control
+*     set hcopypscolor = 1
+*     set color0 = black
+*     set color1 = white
+*     run
+*     set curplottitle= nand
+*     plot v(A) v(B) v(out)+2
+
+* .endc
+* .end
+
+
+
+
+
+* * PSEUDO NMOS
+* .include TSMC_180nm.txt
+
+* .param SUPPLY=1.8
+* .param LAMBDA = 0.09u
+* .param len = 2*LAMBDA
+* .param W_P = 20*LAMBDA
+* .param W_N = 10*LAMBDA
+
+* .global gnd vdd 
+* vdd vdd gnd 'SUPPLY'
+
+* * Input Pulses
+* VA A gnd pulse (0 SUPPLY 10ns .01ns .01ns 10ns 20ns)
+* VB B gnd pulse (0 SUPPLY 20ns .01ns .01ns 20ns 40ns)
+
+* * CMOS Inverter Subcircuit
+* .subckt inverter out in vdd gnd
+* M1 out in gnd gnd CMOSN W={W_N} L={len}
+* + AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N}
+* + AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+* M2 out in vdd vdd CMOSP W={W_P} L={len}
+* + AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P}
+* + AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+* .ends inverter
+* * Repeater Buffer Subcircuit (using two inverters)
+* .subckt buffer out in vdd gnd
+* Xinv mid in vdd gnd inverter
+* Xinv2 out mid vdd gnd inverter
+* .ends buffer
+
+* * Pseudo-NMOS NAND Gate Subcircuit
+* .subckt nand2 out a b vdd gnd
+* * PMOS - Always on (weak pull-up)
+* M_PMOS out gnd vdd vdd CMOSP W={W_P} L={len}
+* + AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
+* + AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+* * NMOS transistors in series to pull down when A and B are high
+* M1_NMOS out a gnd gnd CMOSN W={W_N} L={len}
+* + AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N}
+* + AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+* M2_NMOS out b gnd gnd CMOSN W={W_N} L={len}
+* + AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N}
+* + AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+* Xbuff out_final out vdd gnd buffer
+* .ends nand2
+
+* * Instantiate NAND Gate
+* Xnand2 out a b vdd gnd nand2
+
+* * Simulation Setup
+* .tran 0.01ns 40ns
+* .control
+*     set hcopypscolor = 1
+*     set color0 = black
+*     set color1 = white
+*     run
+*     set curplottitle= nand2
+*     plot v(A) v(B) v(out)+2
+* .endc
+* .end

@@ -1,0 +1,81 @@
+.include TSMC_180nm.txt
+.include subckt.txt
+
+.param SUPPLY=1.8
+.param LAMBDA = 0.09u
+.param len = 2*LAMBDA
+.param W_P = 20*LAMBDA
+.param W_N = 10*LAMBDA
+
+.global gnd vdd 
+vdd vdd gnd 'SUPPLY'
+
+* Input Pulses
+VA A gnd pulse (0 SUPPLY 10ns .1ns .1ns 10ns 20ns)
+VB B gnd pulse (0 SUPPLY 20ns .1ns .1ns 20ns 40ns)
+VC C gnd pulse (0 SUPPLY 40ns .1ns .1ns 40ns 80ns)
+VD D gnd pulse (0 SUPPLY 80ns .1ns .1ns 80ns 160ns)
+
+
+.subckt nand4 out a b c d vdd gnd
+
+M_PMOSA out a vdd vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_PMOSB out b vdd vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_PMOSC out c vdd vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+M_PMOSD out d vdd vdd CMOSP W={W_P} L={len} 
++ AS={5*W_P*LAMBDA} PS={10*LAMBDA+2*W_P} 
++ AD={5*W_P*LAMBDA} PD={10*LAMBDA+2*W_P}
+
+
+M_NMOSA z a out gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+M_NMOSB y b z gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+M_NMOSC x c y gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+M_NMOSD gnd d x gnd CMOSN W={W_N} L={len} 
++ AS={5*W_N*LAMBDA} PS={10*LAMBDA+2*W_N} 
++ AD={5*W_N*LAMBDA} PD={10*LAMBDA+2*W_N}
+
+.ends nand4
+
+
+.subckt and4 out a b c d vdd gnd
+
+Xnand4 y a b c d vdd gnd nand4
+Xinv out y vdd gnd inv
+
+.ends and4
+
+
+* Xnand4 out a b c d vdd gnd nand4
+Xand4 out a b c d vdd gnd and4
+
+* Simulation Setup
+.tran 0.01ns 360ns
+.control
+    set hcopypscolor = 1
+    set color0 = black
+    set color1 = white
+    run
+    set curplottitle= nand4
+    plot v(A) v(B)+2 v(C)+4 v(D)+6 v(out)+8
+
+.endc
+.end
+
